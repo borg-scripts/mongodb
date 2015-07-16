@@ -10,6 +10,16 @@ module.exports = ->
   #Install the latest version
   @then @log 'Install the latest mongodb package'
   @then @install 'mongodb-org'
+  @then @execute 'service mongod stop', sudo: true
+
+  @then @log 'Ensure data directory exists'
+  @then @directory @server.mongodb.dbpath,
+    sudo: true
+    owner: 'mongodb'
+    group: 'mongodb'
+    recursive: true
+    mode: '0755'
+    ignore_errors: true
 
   #Listen on specified interfaces
   @then @replace_line_in_file '/etc/mongod.conf', sudo: true, find: 'bind_ip = 127.0.0.1', replace: "bind_ip = #{@server.mongodb.bind_ip}"
