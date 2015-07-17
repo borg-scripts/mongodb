@@ -10,7 +10,6 @@ module.exports = ->
   #Install the latest version
   @then @log 'Install the latest mongodb package'
   @then @install 'mongodb-org'
-  @then @execute 'service mongod stop', sudo: true
 
   @then @log 'Ensure data directory exists'
   @then @directory @server.mongodb.dbpath,
@@ -32,7 +31,7 @@ module.exports = ->
     @then @log "Enable Replication"
     @then @replace_line_in_file '/etc/mongod.conf', sudo: true, find: 'replSet', replace: "replSet = \"#{@server.mongodb.replication.setname}\""
     @then @replace_line_in_file '/etc/mongod.conf', sudo: true, find: 'oplogSize', replace: "oplogSize=#{@server.mongodb.replication.oplogsize}"
-    @then @execute 'service mongod start', sudo: true
+    @then @execute 'service mongod restart', sudo: true
     #wait for mongodb to finish initializing before trying to initiate the replica set
     @then @execute 'until mongo --eval "db.serverStatus()"; do echo "waiting for mongodb to listen" && sleep 10; done;'
     if @server.instance is '01'
