@@ -27,3 +27,20 @@ module.exports = ->
 
   if @server.mongodb.journaling is false
     @then @replace_line_in_file '/etc/mongod.conf', sudo: true, find: 'nojournal', replace: "nojournal = true"
+
+  if @server.mongodb.replication.enabled is true
+    @then @log "Enable Replication"
+    @then @replace_line_in_file '/etc/mongod.conf', sudo: true, find: 'replSet', replace: "replSet = \"#{@server.mongodb.replication.setname}\""
+    @then @replace_line_in_file '/etc/mongod.conf', sudo: true, find: 'oplogSize', replace: "oplogSize=#{@server.mongodb.replication.oplogsize}"
+    @then @execute 'service mongod start', sudo: true
+    #wait for mongodb to finish initializing before trying to initiate the replica set
+    @then @execute 'until mongo --eval "db.serverStatus()"; do echo "waiting for mongodb to listen" && sleep 10; done;'
+    if @server.instance is '01'
+      @then @execute 'mongo --eval "printjson(rs.initiate())"'
+    else
+      @map_servers
+        types: @server.type, instances: '01', required: true, (o) =>
+          @then @hostsfile_entry [o.hostname,o.fqdn], ip: o.private_ip
+          @then @log "Add to cluster #{o.private_ip}"
+          @then @execute "until mongo --host #{o.private_ip} --eval \"printjson(rs.add(\'#{@server.private_ip}\'))\"; do echo 'waiting for main node to listen' && sleep 10; done;"
+    @then @execute 'mongo --eval \"printjson(rs.status())\"'
