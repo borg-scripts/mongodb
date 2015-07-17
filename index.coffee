@@ -37,9 +37,8 @@ module.exports = ->
     if @server.instance is '01'
       @then @execute 'mongo --eval "printjson(rs.initiate())"'
     else
-      @map_servers
-        types: @server.type, instances: '01', required: true, (o) =>
-          @then @hostsfile_entry [o.hostname,o.fqdn], ip: o.private_ip
-          @then @log "Add to cluster #{o.private_ip}"
-          @then @execute "until mongo --host #{o.private_ip} --eval \"printjson(rs.add(\'#{@server.private_ip}\'))\"; do echo 'waiting for main node to listen' && sleep 10; done;"
+      mongoprimary = @find_server type: @server.type, instance: '01', required: true
+      @then @hostsfile_entry [mongoprimary.hostname,mongoprimary.fqdn], ip: mongoprimary.private_ip
+      @then @log "Add to cluster #{mongoprimary.private_ip}"
+      @then @execute "until mongo --host #{mongoprimary.private_ip} --eval \"printjson(rs.add(\'#{@server.private_ip}\'))\"; do echo 'waiting for main node to listen' && sleep 10; done;"
     @then @execute 'mongo --eval \"printjson(rs.status())\"'
