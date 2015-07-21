@@ -25,12 +25,12 @@ module.exports = ->
   @then @replace_line_in_file '/etc/mongod.conf', sudo: true, find: 'dbpath', replace: "dbpath = #{@server.mongodb.dbpath}"
 
   if @server.mongodb.journaling is false
-    @then @replace_line_in_file '/etc/mongod.conf', sudo: true, find: 'nojournal', replace: "nojournal = true"
+    @then @replace_line_in_file '/etc/mongod.conf', sudo: true, find: '.*nojournal', replace: "nojournal = true"
 
   if @server.mongodb.replication.enabled is true
     @then @log "Enable Replication"
-    @then @replace_line_in_file '/etc/mongod.conf', sudo: true, find: 'replSet', replace: "replSet = \"#{@server.mongodb.replication.setname}\""
-    @then @replace_line_in_file '/etc/mongod.conf', sudo: true, find: 'oplogSize', replace: "oplogSize=#{@server.mongodb.replication.oplogsize}"
+    @then @replace_line_in_file '/etc/mongod.conf', sudo: true, find: '.*replSet', replace: "replSet = \"#{@server.mongodb.replication.setname}\""
+    @then @replace_line_in_file '/etc/mongod.conf', sudo: true, find: '.*oplogSize', replace: "oplogSize=#{@server.mongodb.replication.oplogsize}"
     @then @execute 'service mongod restart', sudo: true
     #wait for mongodb to finish initializing before trying to initiate the replica set
     @then @execute 'until mongo --eval "db.serverStatus()"; do echo "waiting for mongodb to listen" && sleep 10; done;'
